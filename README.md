@@ -110,8 +110,6 @@ Select `wingfoil-forecast` to view options (deploy/start/stop/restart/logs/statu
 - Origin is not exposed publicly; access is via Cloudflare Tunnel
 - Avoid committing secrets; see `GITLEAKS_README.md` and `.gitleaks.toml`
 
-## License
-Internal project; see repository policies.
 
 
 
