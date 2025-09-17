@@ -1,0 +1,39 @@
+# General
+.env
+.env.*
+*.log
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.cache/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+
+# Secrets/certs
+*.key
+*.pem
+*.p12
+secrets/
+
+# Local runtime data and uploads
+data/
+app/static/spot-map.jpg
+app/static/spot-map.png
+
+# Config: keep real config out of git, commit example only
+config/config.json
+config/*.local.json
+
+# Security scan results
+gitleaks-report.json
+security-scan.log
+
+
+GITLEAKS_README.md
+scripts/
+.github/

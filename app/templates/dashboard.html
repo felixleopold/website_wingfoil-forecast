@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wingfoil Forecast</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc; /* light */
+            min-height: 100vh;
+            color: #111827; /* gray-900 */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: #111827;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-1px);
+            border-color: #d1d5db; /* gray-300 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .card h3 {
+            color: #111827;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-good { background-color: #10b981; }
+        .status-marginal { background-color: #f59e0b; }
+        .status-poor { background-color: #ef4444; }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #374151; /* gray-700 */
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #111827; /* gray-900 */
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #6b7280; /* gray-500 */
+        }
+        
+        .error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            margin: 16px 0;
+        }
+        
+        .refresh-btn {
+            background: #ffffff;
+            color: #111827;
+            border: 1px solid #d1d5db;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #f9fafb;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #6b7280; /* gray-500 */
+            font-size: 0.85rem;
+            margin-top: 16px;
+        }
+        
+        .api-info {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 0;
+            margin-top: 24px;
+        }
+        
+        .api-info h3 {
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .api-endpoints {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .endpoint {
+            background: #f9fafb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.85rem;
+            color: #111827;
+        }
+        
+        .advice-section {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #e5e7eb;
+        }
+        
+        .advice-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        .advice-content {
+            color: #111827;
+            font-size: 0.9rem;
+        }
+        
+        .wingfoil-highlight {
+            background: #f9fafb;
+            color: #111827;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .conditions-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .conditions-excellent { background: #10b981; color: white; }
+        .conditions-good { background: #14b8a6; color: white; }
+        .conditions-marginal { background: #f59e0b; color: white; }
+        .conditions-poor { background: #ef4444; color: white; }
+        
+        .hourly-forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        
+        .hour-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .hour-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #d1d5db;
+        }
+        
+        .hour-card.excellent { border-color: #10b981; background: rgba(16,185,129,0.04); }
+        .hour-card.good { border-color: #14b8a6; background: rgba(20,184,166,0.04); }
+        .hour-card.marginal { border-color: #f59e0b; background: rgba(245,158,11,0.04); }
+        .hour-card.poor { border-color: #ef4444; background: rgba(239,68,68,0.04); }
+        
+        .hour-time {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .hour-wind {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .hour-conditions {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        
+        .hour-score {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .hour-score.excellent { background: #10b981; color: white; }
+        .hour-score.good { background: #14b8a6; color: white; }
+        .hour-score.marginal { background: #f59e0b; color: white; }
+        .hour-score.poor { background: #ef4444; color: white; }
+        
+        .hourly-summary {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        /* Modal for hourly details */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        .modal-close {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .modal-body {
+            padding: 16px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px 16px;
+        }
+        .detail-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .detail-item:last-child { border-bottom: none; }
+        
+        .info-icon {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:18px; height:18px; border:1px solid #d1d5db; border-radius:50%;
+            font-size:12px; color:#374151; margin-left:8px; cursor:help; background:#fff;
+        }
+        
+        /* Spot map */
+        .map-wrapper { position: relative; width:100%; max-width: 100%; }
+        .map-img { width:100%; height:auto; border-radius:8px; border:none; display:block; }
+        .map-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+        
+        .summary-stat {
+            text-align: center;
+        }
+        
+        .summary-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2b6cb0;
+        }
+        
+        .summary-label {
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Wingfoil Forecast</h1>
+            <p style="opacity:0.75; font-size:0.95rem; color:#6b7280;">Real-time conditions and model analysis</p>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>Current Conditions</h3>
+                <div id="current-conditions" class="loading">Loading...</div>
+            </div>
+            
+            <div class="card">
+                <h3>Wingfoil Assessment</h3>
+                <div id="wingfoil-assessment" class="loading">Loading...</div>
+            </div>
+            
+            <div class="card">
+                <h3>Weather Details</h3>
+                <div id="weather-details" class="loading">Loading...</div>
+            </div>
+
+            <div class="card">
+                <h3>Model Consensus</h3>
+                <div id="model-consensus" class="loading">Loading...</div>
+            </div>
+            
+            <div class="card" style="padding: 0;">
+                <div style="padding:20px; padding-bottom:0;"><h3>Spot Map</h3></div>
+                <div class="map-wrapper" style="padding:0 20px 12px 20px;">
+                    <img id="spot-map-img" class="map-img" src="/spot-map" alt="Spot map" onerror="this.style.display='none'" />
+                    <svg class="map-overlay" id="spot-overlay"></svg>
+                </div>
+                <div style="font-size:0.85rem;color:#6b7280;margin:0 20px 16px 20px;">Upload or change the map in Settings.</div>
+            </div>
+            
+            <div class="card">
+                <h3>Wingfoil Advice</h3>
+                <div id="wingfoil-advice" class="loading">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Today's Hourly Forecast (Daylight)</h3>
+            <div id="hourly-forecast" class="loading">Loading...</div>
+        </div>
+        
+        
+
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Tomorrow's Forecast (Daylight)</h3>
+            <div id="tomorrow-forecast" class="loading">Loading...</div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
+        </div>
+        
+        <div class="timestamp" id="last-updated"></div>
+        
+        <details class="api-info">
+            <summary style="padding:12px 16px; cursor:pointer; color:#374151;">API Endpoints</summary>
+            <div style="padding: 0 16px 16px 16px;">
+                <h3>Endpoints</h3>
+                <div class="api-endpoints">
+                    <div class="endpoint">GET /api/current-conditions — Full weather and wingfoil data</div>
+                    <div class="endpoint">GET /api/hourly-forecast — Today's hourly forecast (daylight hours only)</div>
+                    <div class="endpoint">GET /api/tomorrow-forecast — Tomorrow's hourly forecast (daylight hours only)</div>
+                    <div class="endpoint">GET /api/inkypi/morning-report — Formatted for InkyPi morning reports</div>
+                    <div class="endpoint">GET /api/forecast/24 — 24-hour forecast (coming soon)</div>
+                    <div class="endpoint">GET /health — Service health check</div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <script>
+        let currentData = null;
+        let hourlyCache = [];
+        
+        async function loadData() {
+            try {
+                showLoading();
+                
+                // Load main conditions data
+                const response = await fetch('/api/current-conditions');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                currentData = await response.json();
+                
+                // Load hourly forecast data
+                loadHourlyForecast();
+                
+                // Load tomorrow's forecast data
+                loadTomorrowForecast();
+                
+                updateDisplay();
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        async function loadHourlyForecast() {
+            try {
+                const response = await fetch('/api/hourly-forecast');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const hourlyData = await response.json();
+                updateHourlyForecast(hourlyData);
+                
+            } catch (error) {
+                console.error('Error loading hourly forecast:', error);
+                document.getElementById('hourly-forecast').innerHTML = '<div class="error">Hourly forecast temporarily unavailable</div>';
+            }
+        }
+        
+        async function loadTomorrowForecast() {
+            try {
+                const response = await fetch('/api/tomorrow-forecast');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const tomorrowData = await response.json();
+                updateTomorrowForecast(tomorrowData);
+                
+            } catch (error) {
+                console.error('Error loading tomorrow forecast:', error);
+                document.getElementById('tomorrow-forecast').innerHTML = '<div class="error">Tomorrow\'s forecast temporarily unavailable</div>';
+            }
+        }
+        
+        function updateHourlyForecast(data) {
+            if (!data || !data.hourly_forecast) {
+                document.getElementById('hourly-forecast').innerHTML = '<div class="error">No hourly data available</div>';
+                return;
+            }
+            
+            const summary = data.summary || {};
+            const forecast = data.hourly_forecast || [];
+            hourlyCache = forecast;
+            
+            // Create summary section
+            const summaryHtml = `
+                <div class="hourly-summary">
+                    <h4 style="margin-bottom: 10px; color: #2b6cb0;">Today's Forecast Summary</h4>
+                    <div class="summary-stats">
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.total_hours || 0}</div>
+                            <div class="summary-label">Total Hours</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.suitable_hours || 0}</div>
+                            <div class="summary-label">Suitable Hours</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.good_hours || 0}</div>
+                            <div class="summary-label">Good Hours</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create hourly cards
+            const hourlyCards = forecast.map((hour, idx) => {
+                const score = hour.wingfoil?.score || 0;
+                const scoreClass = score >= 85 ? 'excellent' : 
+                                 score >= 70 ? 'good' : 
+                                 score >= 60 ? 'marginal' : 'poor';
+                
+                const windDir = hour.wind?.direction || 0;
+                const windDirText = getWindDirection(windDir);
+                
+                return `
+                    <div class="hour-card ${scoreClass}" data-hour-index="${idx}" onclick="showHourDetail(${idx})" style="cursor:pointer;">
+                        <div class="hour-time">${hour.time}</div>
+                        <div class="hour-wind">${num(hour.wind?.speed_knots)} kts</div>
+                        <div class="hour-conditions">
+                            ${windDirText} | ${num(hour.waves?.height_m)}m waves<br>
+                            ${num(hour.conditions?.temperature)}°C | ${hour.wingfoil?.wing_size || '—'}
+                        </div>
+                        <div class="hour-score ${scoreClass}">
+                            ${hour.wingfoil?.overall_conditions || 'N/A'} (${score})
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('hourly-forecast').innerHTML = summaryHtml + `
+                <div class="hourly-forecast">
+                    ${hourlyCards}
+                </div>
+            `;
+        }
+
+        function showHourDetail(index) {
+            if (!hourlyCache || !hourlyCache[index]) return;
+            const hour = hourlyCache[index];
+            const windDirText = getWindDirection(hour?.wind?.direction || 0);
+            const modal = document.getElementById('hour-detail-modal');
+            const body = document.getElementById('hour-detail-body');
+            const title = document.getElementById('hour-detail-title');
+            title.textContent = `Detailed conditions for ${hour.time}`;
+            body.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-item"><span>Wind</span><span>${num(hour.wind?.speed_knots)} kts (${windDirText})</span></div>
+                    <div class="detail-item"><span>Gust</span><span>${num(hour.wind?.gust_knots)} kts</span></div>
+                    <div class="detail-item"><span>Waves</span><span>${num(hour.waves?.height_m)} m / ${num(hour.waves?.period_s)} s</span></div>
+                    <div class="detail-item"><span>Temperature</span><span>${num(hour.conditions?.temperature)} °C</span></div>
+                    <div class="detail-item"><span>Pressure</span><span>${num(hour.conditions?.pressure)} hPa</span></div>
+                    <div class="detail-item"><span>UV Index</span><span>${num(hour.conditions?.uv_index)} </span></div>
+                    <div class="detail-item"><span>Wingfoil score</span><span>${hour.wingfoil?.overall_conditions || 'N/A'} (${hour.wingfoil?.score || 0})</span></div>
+                    <div class="detail-item"><span>Recommended wing</span><span>${hour.wingfoil?.wing_size || '—'}</span></div>
+                    <div class="detail-item"><span>Wind evaluation</span><span>${hour.wingfoil?.wind_evaluation || '—'}</span></div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeHourDetail() {
+            const modal = document.getElementById('hour-detail-modal');
+            modal.style.display = 'none';
+        }
+        
+        function updateTomorrowForecast(data) {
+            if (!data || !data.hourly_forecast) {
+                document.getElementById('tomorrow-forecast').innerHTML = '<div class="error">No tomorrow data available</div>';
+                return;
+            }
+            
+            const summary = data.summary || {};
+            const forecast = data.hourly_forecast || [];
+            
+            // Create summary section
+            const summaryHtml = `
+                <div class="hourly-summary">
+                    <h4 style="margin-bottom: 10px; color: #2b6cb0;">Tomorrow's Forecast Summary (${data.date})</h4>
+                    <div class="summary-stats">
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.total_hours || 0}</div>
+                            <div class="summary-label">Total Hours</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.suitable_hours || 0}</div>
+                            <div class="summary-label">Suitable Hours</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-number">${summary.good_hours || 0}</div>
+                            <div class="summary-label">Good Hours</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create hourly cards
+            const hourlyCards = forecast.map(hour => {
+                const score = hour.wingfoil?.score || 0;
+                const scoreClass = score >= 85 ? 'excellent' : 
+                                 score >= 70 ? 'good' : 
+                                 score >= 60 ? 'marginal' : 'poor';
+                
+                const windDir = hour.wind?.direction || 0;
+                const windDirText = getWindDirection(windDir);
+                
+                return `
+                    <div class="hour-card ${scoreClass}">
+                        <div class="hour-time">${hour.time}</div>
+                        <div class="hour-wind">${num(hour.wind?.speed_knots)} kts</div>
+                        <div class="hour-conditions">
+                            ${windDirText} | ${num(hour.waves?.height_m)}m waves<br>
+                            ${num(hour.conditions?.temperature)}°C | ${hour.wingfoil?.wing_size || '—'}
+                        </div>
+                        <div class="hour-score ${scoreClass}">
+                            ${hour.wingfoil?.overall_conditions || 'N/A'} (${score})
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('tomorrow-forecast').innerHTML = summaryHtml + `
+                <div class="hourly-forecast">
+                    ${hourlyCards}
+                </div>
+            `;
+        }
+        
+        function getWindDirection(degrees) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const index = Math.round(degrees / 22.5) % 16;
+            return directions[index];
+        }
+        
+        function showLoading() {
+            const sections = ['current-conditions', 'wingfoil-assessment', 'weather-details', 'model-consensus', 'wingfoil-advice', 'hourly-forecast', 'tomorrow-forecast'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="loading">Loading...</div>';
+            });
+        }
+        
+        function showError(message) {
+            const sections = ['current-conditions', 'wingfoil-assessment', 'weather-details', 'model-consensus', 'wingfoil-advice'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<div class="error">Error: ${message}</div>`;
+            });
+            // Show a different error for forecast sections since they're optional
+            const hf = document.getElementById('hourly-forecast');
+            if (hf) hf.innerHTML = '<div class="error">Today\'s forecast temporarily unavailable</div>';
+            const tf = document.getElementById('tomorrow-forecast');
+            if (tf) tf.innerHTML = '<div class="error">Tomorrow\'s forecast temporarily unavailable</div>';
+        }
+        
+        function num(value, digits = 1, fallback = 'N/A') {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) return fallback;
+            const n = Number(value);
+            return isFinite(n) ? n.toFixed(digits) : fallback;
+        }
+
+        function updateDisplay() {
+            if (!currentData) return;
+            
+            const { weather, wingfoil, wingfoil_advice, multi_model, sport_metrics, display_settings } = currentData;
+            if (!weather || !wingfoil) {
+                showError('Missing data from API');
+                return;
+            }
+            
+            // Current conditions
+            document.getElementById('current-conditions').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Wind</span>
+                    <span class="metric-value">${num(weather.wind_speed_knots)} knots @ ${weather.wind_direction ?? '—'}°</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Waves</span>
+                    <span class="metric-value">${num(weather.wave_height)}m / ${num(weather.wave_period)}s</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Air Temperature</span>
+                    <span class="metric-value">${num(weather.temperature)}°C</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Water Temperature</span>
+                    <span class="metric-value">${num(weather.water_temperature)}°C</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Gust Factor (consensus)</span>
+                    <span class="metric-value">${num(multi_model?.consensus?.gust_factor, 2)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Location</span>
+                    <span class="metric-value">${weather.location}</span>
+                </div>
+            `;
+            
+            // Wingfoil assessment
+            const score = Number(wingfoil.score ?? 0);
+            const statusClass = score >= 70 ? 'status-good' : score >= 60 ? 'status-marginal' : 'status-poor';
+            
+            document.getElementById('wingfoil-assessment').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Overall</span>
+                    <span class="metric-value">
+                        <span class="status-indicator ${statusClass}"></span>
+                        ${wingfoil.overall_conditions ?? 'Unknown'} (${score}/100)
+                    </span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Suitable</span>
+                    <span class="metric-value">${wingfoil.suitable ? 'Yes' : 'No'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wind Evaluation</span>
+                    <span class="metric-value">${wingfoil.wind_evaluation ?? 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wave Evaluation</span>
+                    <span class="metric-value">${wingfoil.wave_evaluation ?? 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Conditions Summary</span>
+                    <span class="metric-value">${wingfoil_advice?.conditions_summary ?? 'N/A'}</span>
+                </div>
+            `;
+            
+            // Weather details
+            document.getElementById('weather-details').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Pressure</span>
+                    <span class="metric-value">${num(weather.pressure, 0)} hPa</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Humidity</span>
+                    <span class="metric-value">${weather.humidity ?? 'N/A'}%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wind Gusts</span>
+                    <span class="metric-value">${num((weather.wind_gust_ms ?? 0) * 1.944)} knots</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">UV Index</span>
+                    <span class="metric-value">${num(weather.uv_index)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Visibility</span>
+                    <span class="metric-value">${num((weather.visibility ?? 0) / 1000)} km</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Shore Direction</span>
+                    <span class="metric-value">${sport_metrics?.shore_direction_deg ?? '—'}°</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Wind ↔ Shore Angle</span>
+                    <span class="metric-value">${sport_metrics?.wind_to_shore_angle_deg ?? sport_metrics?.shore_angle_deg ?? '—'}°</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Chop Index</span>
+                    <span class="metric-value">${num(sport_metrics?.chop_index)}</span>
+                </div>
+            `;
+
+            // Model consensus
+            const consensus = multi_model?.consensus;
+            const perModel = multi_model?.per_model || {};
+            const perModelHtml = Object.entries(perModel).map(([name, v]) => `
+                <div class="metric">
+                    <span class="metric-label">${name}</span>
+                    <span class="metric-value">${num(v.wind_speed_knots)}kts (gust ${num(v.wind_gust_knots)}kts)</span>
+                </div>`).join('');
+            document.getElementById('model-consensus').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Median wind</span>
+                    <span class="metric-value">${num(consensus?.median_wind_knots)}kts (spread ${num(consensus?.spread_knots)}kts)</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Median gust</span>
+                    <span class="metric-value">${num(consensus?.median_gust_knots)}kts</span>
+                </div>
+                ${perModelHtml || '<div class="metric"><span class="metric-label">Models</span><span class="metric-value">N/A</span></div>'}
+            `;
+            
+            // Merge Recommendations + Wingfoil Advice into single detailed equipment card
+            const equipmentAdvice = wingfoil_advice?.equipment_advice || [];
+            const sessionAdvice = wingfoil_advice?.session_advice || [];
+            const safetyAdvice = wingfoil_advice?.safety_advice || [];
+            const sizingNotes = wingfoil_advice?.sizing_notes || [];
+            const recs = wingfoil?.recommendations || [];
+
+            const foilBoard = equipmentAdvice.join(' | ');
+            const notesText = [
+                ...(sizingNotes || []),
+                ...(sessionAdvice || []),
+                ...(safetyAdvice || []),
+                ...(recs || [])
+            ].filter(Boolean).join(' \u2022 ');
+
+            const mergedHtml = `
+                <div class=\"metric\"><span class=\"metric-label\">Wing</span><span class=\"metric-value\">${wingfoil_advice?.recommended_wing_size || '—'}<span class=\"info-icon\" title=\"${notesText}\">i</span></span></div>
+                <div class=\"metric\"><span class=\"metric-label\">Foil/Board</span><span class=\"metric-value\">${foilBoard || '—'}<span class=\"info-icon\" title=\"${notesText}\">i</span></span></div>
+            `;
+            document.getElementById('wingfoil-advice').innerHTML = mergedHtml || '<div class="metric"><span class="metric-label">Status</span><span class="metric-value">No advice available</span></div>';
+            
+            // Update timestamp
+            document.getElementById('last-updated').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+
+            // Draw simple overlay arrows if map image exists
+            try {
+                const svg = document.getElementById('spot-overlay');
+                if (svg) {
+                    const width = svg.clientWidth || svg.parentElement.clientWidth;
+                    const height = svg.clientHeight || (svg.parentElement.clientWidth * 0.6);
+                    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    svg.innerHTML = '';
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const len = Math.min(width, height) * ((display_settings?.map_overlay?.shoreline_length_pct || 35) / 100);
+                    function arrow(x, y, angleDeg, color) {
+                        // angleDeg is meteorological (0° = North, 90° = East). Convert to canvas: 0° points up
+                        const rad = (angleDeg - 90) * Math.PI / 180;
+                        const x2 = x + len * Math.cos(rad);
+                        const y2 = y + len * Math.sin(rad);
+                        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+                        line.setAttribute('x1', x); line.setAttribute('y1', y);
+                        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', color); line.setAttribute('stroke-width', '6'); line.setAttribute('stroke-linecap','round');
+                        line.setAttribute('marker-end', 'url(#arrowhead)');
+                        svg.appendChild(line);
+                    }
+                    // Arrow marker
+                    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+                    const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+                    marker.setAttribute('id','arrowhead');
+                    marker.setAttribute('markerWidth','12');
+                    marker.setAttribute('markerHeight','8');
+                    marker.setAttribute('refX','0');
+                    marker.setAttribute('refY','4');
+                    marker.setAttribute('orient','auto');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+                    path.setAttribute('d','M0,0 L0,8 L12,4 z');
+                    path.setAttribute('fill','#ef4444');
+                    marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
+
+                    // Shoreline (yellow sand colored line)
+                    if (sport_metrics?.shore_direction_deg != null) {
+                        const sandLen = len * 0.9;
+                        // Shore direction is the direction the shoreline faces (bearing). Draw along that bearing.
+                        const rad = (sport_metrics.shore_direction_deg - 90) * Math.PI / 180;
+                        const x2 = centerX + sandLen * Math.cos(rad);
+                        const y2 = centerY + sandLen * Math.sin(rad);
+                        const sand = document.createElementNS('http://www.w3.org/2000/svg','line');
+                        sand.setAttribute('x1', centerX); sand.setAttribute('y1', centerY);
+                        sand.setAttribute('x2', x2); sand.setAttribute('y2', y2);
+                        sand.setAttribute('stroke', '#facc15'); sand.setAttribute('stroke-width','8'); sand.setAttribute('stroke-linecap','round');
+                        sand.setAttribute('opacity','0.9');
+                        svg.appendChild(sand);
+                    }
+
+                    // Wind direction (red arrow + label)
+                    if (weather?.wind_direction != null) {
+                        arrow(centerX, centerY, weather.wind_direction, '#ef4444');
+                        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+                        label.setAttribute('x', centerX + 10);
+                        label.setAttribute('y', centerY - 10);
+                        label.setAttribute('fill', '#111827');
+                        label.setAttribute('font-size', '14');
+                        label.setAttribute('font-weight', '600');
+                        const gust = (weather.wind_gust_ms || 0) * 1.944;
+                        label.textContent = `${num(weather.wind_speed_knots)} kts (gust ${num(gust)})`;
+                        svg.appendChild(label);
+                    }
+                }
+            } catch (e) { /* ignore overlay errors */ }
+        }
+        
+        // Load data on page load and refresh every 5 minutes
+        loadData();
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+    
+    <!-- Hour detail modal -->
+    <div class="modal-overlay" id="hour-detail-modal" onclick="if(event.target === this) closeHourDetail()">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="hour-detail-title">Hour Detail</div>
+                <button class="modal-close" onclick="closeHourDetail()">Close</button>
+            </div>
+            <div class="modal-body" id="hour-detail-body"></div>
+        </div>
+    </div>
+</body>
+</html>

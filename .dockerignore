@@ -1,0 +1,44 @@
+# Exclude VCS and local files from Docker build context
+.git
+.gitignore
+**/.git
+
+# Python caches and venv
+__pycache__/
+*.pyc
+.venv/
+
+# Node and misc caches
+node_modules/
+.cache/
+
+# Local data and uploads
+data/
+app/static/spot-map.jpg
+app/static/spot-map.png
+
+# Real configs and secrets
+config/config.json
+config/*.local.json
+.env
+.env.*
+*.key
+*.pem
+*.p12
+secrets/
+
+# Documentation and development files
+README.md
+*.md
+docs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

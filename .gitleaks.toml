@@ -1,0 +1,97 @@
+# Gitleaks configuration for wingfoil-forecast
+# Scans for secrets and sensitive information
+
+[gitleaks]
+  # Enable all rules
+  enable = true
+  
+  # Custom rules for this project
+  [[rules]]
+    id = "openweather-api-key"
+    description = "OpenWeather API Key"
+    regex = '''openweather[_-]?api[_-]?key["\s]*[:=]["\s]*[a-f0-9]{32}'''
+    tags = ["api", "openweather", "key"]
+    
+  [[rules]]
+    id = "admin-token"
+    description = "Admin Token"
+    regex = '''admin[_-]?token["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["admin", "token", "auth"]
+    
+  [[rules]]
+    id = "flask-secret-key"
+    description = "Flask Secret Key"
+    regex = '''secret[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["flask", "secret", "key"]
+    
+  [[rules]]
+    id = "database-url"
+    description = "Database URL"
+    regex = '''database[_-]?url["\s]*[:=]["\s]*[a-z]+://[^\s"']+'''
+    tags = ["database", "url", "connection"]
+    
+  [[rules]]
+    id = "webhook-url"
+    description = "Webhook URL"
+    regex = '''webhook[_-]?url["\s]*[:=]["\s]*https?://[^\s"']+'''
+    tags = ["webhook", "url", "notification"]
+    
+  [[rules]]
+    id = "jwt-secret"
+    description = "JWT Secret"
+    regex = '''jwt[_-]?secret["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["jwt", "secret", "auth"]
+    
+  [[rules]]
+    id = "generic-api-key"
+    description = "Generic API Key Pattern"
+    regex = '''["\s]api[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["api", "key", "generic"]
+    
+  [[rules]]
+    id = "access-token"
+    description = "Access Token"
+    regex = '''access[_-]?token["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["access", "token", "auth"]
+    
+  [[rules]]
+    id = "private-key"
+    description = "Private Key"
+    regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
+    tags = ["private", "key", "crypto"]
+    
+  [[rules]]
+    id = "ssh-private-key"
+    description = "SSH Private Key"
+    regex = '''-----BEGIN OPENSSH PRIVATE KEY-----'''
+    tags = ["ssh", "private", "key"]
+    
+  [[rules]]
+    id = "aws-access-key"
+    description = "AWS Access Key"
+    regex = '''AKIA[0-9A-Z]{16}'''
+    tags = ["aws", "access", "key"]
+    
+  [[rules]]
+    id = "github-token"
+    description = "GitHub Token"
+    regex = '''ghp_[a-zA-Z0-9]{36}'''
+    tags = ["github", "token"]
+    
+  [[rules]]
+    id = "generic-token"
+    description = "Generic Token Pattern"
+    regex = '''["\s]token["\s]*[:=]["\s]*[a-zA-Z0-9+/=]{20,}'''
+    tags = ["token", "generic"]
+    
+  [[rules]]
+    id = "password-in-config"
+    description = "Password in config"
+    regex = '''password["\s]*[:=]["\s]*[^"'\s]{8,}'''
+    tags = ["password", "config"]
+    
+  [[rules]]
+    id = "email-with-password"
+    description = "Email with password"
+    regex = '''[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}["\s]*[:=]["\s]*[^"'\s]{8,}'''
+    tags = ["email", "password"]

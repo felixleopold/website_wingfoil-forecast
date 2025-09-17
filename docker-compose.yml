@@ -1,0 +1,23 @@
+services:
+  wingfoil-forecast:
+    build: .
+    container_name: wingfoil-forecast
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    networks:
+      - web
+    environment:
+      - FLASK_ENV=production
+      - TZ=Europe/Berlin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wingfoil-forecast.rule=Host(`wingfoil.felixmrak.com`)"
+      - "traefik.http.routers.wingfoil-forecast.entrypoints=web"
+      - "traefik.http.routers.wingfoil-forecast.middlewares=auth-global@file"
+      - "traefik.http.services.wingfoil-forecast.loadbalancer.server.port=5000"
+
+networks:
+  web:
+    external: true

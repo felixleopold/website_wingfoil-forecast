@@ -1,0 +1,50 @@
+{
+  "location": {
+    "name": "Your Spot Name",
+    "latitude": 52.5200,
+    "longitude": 13.4050,
+    "shore_direction": 180
+  },
+  "wingfoil_preferences": {
+    "min_wind_knots": 12,
+    "max_wind_knots": 25,
+    "optimal_wind_min": 16,
+    "optimal_wind_max": 20,
+    "max_wave_height": 2
+  },
+  "models": [
+    "gfs",
+    "icon_seamless",
+    "ecmwf_ifs04"
+  ],
+  "model_weights": {
+    "ecmwf_ifs04": 1,
+    "icon_seamless": 1,
+    "gfs": 1,
+    "openweather": 1
+  },
+  "integrations": {
+    "openweather_api_key": "YOUR_OPENWEATHER_API_KEY_HERE"
+  },
+  "api_settings": {
+    "update_interval_minutes": 30,
+    "cache_duration_minutes": 15,
+    "timeout_seconds": 10,
+    "admin_token": "YOUR_ADMIN_TOKEN_HERE"
+  },
+  "display_settings": {
+    "map_overlay": {
+      "shoreline_length_pct": 35
+    }
+  },
+  "notifications": {
+    "enabled": true,
+    "good_conditions_threshold": 70,
+    "webhook_url": null
+  },
+  "update_interval_minutes": 30,
+  "user": {
+    "rider_weight_kg": 66,
+    "skill_level": "beginner"
+  }
+}

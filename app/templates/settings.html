@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wingfoil Settings</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; background:#f7fafc; margin:0; padding:20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color:#2d3748; }
+    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,.05); margin-bottom:20px; }
+    label { display:block; font-weight:600; color:#4a5568; margin:10px 0 6px; }
+    input[type="text"], input[type="number"] { width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .actions { text-align:right; }
+    button { background:#5a67d8; color:#fff; border:none; padding:12px 18px; border-radius:8px; cursor:pointer; }
+    button:hover { background:#4c51bf; }
+    .msg { margin-top:12px; color:#2f855a; }
+    .upload { border:1px dashed #cbd5e1; padding:14px; border-radius:8px; background:#f8fafc; }
+  </style>
+  <script>
+    let cfg = {};
+    async function loadConfig() {
+      const res = await fetch('/api/config');
+      cfg = await res.json();
+      document.getElementById('name').value = cfg.location?.name || '';
+      document.getElementById('lat').value = cfg.location?.latitude || '';
+      document.getElementById('lon').value = cfg.location?.longitude || '';
+      document.getElementById('shore').value = cfg.location?.shore_direction || 180;
+      document.getElementById('minWind').value = cfg.wingfoil_preferences?.min_wind_knots || 12;
+      document.getElementById('maxWind').value = cfg.wingfoil_preferences?.max_wind_knots || 30;
+      document.getElementById('optMin').value = cfg.wingfoil_preferences?.optimal_wind_min || 15;
+      document.getElementById('optMax').value = cfg.wingfoil_preferences?.optimal_wind_max || 25;
+      document.getElementById('maxWave').value = cfg.wingfoil_preferences?.max_wave_height || 1.5;
+      document.getElementById('weight').value = cfg.user?.rider_weight_kg || 80;
+      document.getElementById('skill').value = cfg.user?.skill_level || 'intermediate';
+      document.getElementById('shorelineLen').value = (cfg.display_settings?.map_overlay?.shoreline_length_pct) ?? 35;
+    }
+
+    async function saveConfig() {
+      const payload = {
+        location: {
+          name: document.getElementById('name').value,
+          latitude: Number(document.getElementById('lat').value),
+          longitude: Number(document.getElementById('lon').value),
+          shore_direction: Number(document.getElementById('shore').value)
+        },
+        wingfoil_preferences: {
+          min_wind_knots: Number(document.getElementById('minWind').value),
+          max_wind_knots: Number(document.getElementById('maxWind').value),
+          optimal_wind_min: Number(document.getElementById('optMin').value),
+          optimal_wind_max: Number(document.getElementById('optMax').value),
+          max_wave_height: Number(document.getElementById('maxWave').value)
+        },
+        user: {
+          rider_weight_kg: Number(document.getElementById('weight').value),
+          skill_level: document.getElementById('skill').value
+        },
+        display_settings: {
+          ...(typeof cfg === 'object' ? (cfg.display_settings || {}) : {}),
+          map_overlay: {
+            shoreline_length_pct: Number(document.getElementById('shorelineLen').value || 35)
+          }
+        }
+      };
+      const headers = { 'Content-Type': 'application/json' };
+      const admin = document.getElementById('adminToken').value.trim();
+      if (admin) headers['X-Admin-Token'] = admin;
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const j = await res.json();
+      document.getElementById('msg').textContent = j.message || 'Saved';
+    }
+
+    async function uploadMap(ev) {
+      ev.preventDefault();
+      const input = document.getElementById('mapfile');
+      if (!input.files || !input.files[0]) return;
+      const fd = new FormData();
+      fd.append('file', input.files[0]);
+      const admin = document.getElementById('adminToken').value.trim();
+      const res = await fetch('/api/spot-map', { method:'POST', headers: admin ? { 'X-Admin-Token': admin } : undefined, body: fd });
+      const j = await res.json();
+      document.getElementById('msg').textContent = j.message || 'Uploaded';
+    }
+
+    window.addEventListener('DOMContentLoaded', loadConfig);
+  </script>
+  </head>
+<body>
+  <div class="container">
+    <h1>Wingfoil Settings</h1>
+    <div class="card">
+      <h3>Location</h3>
+      <label>Name</label>
+      <input id="name" type="text" />
+      <div class="row">
+        <div>
+          <label>Latitude</label>
+          <input id="lat" type="number" step="0.0001" />
+        </div>
+        <div>
+          <label>Longitude</label>
+          <input id="lon" type="number" step="0.0001" />
+        </div>
+      </div>
+      <label>Shore Direction (deg)</label>
+      <input id="shore" type="number" />
+    </div>
+
+    <div class="card">
+      <h3>Wind & Waves Preferences</h3>
+      <div class="row">
+        <div>
+          <label>Min Wind (kts)</label>
+          <input id="minWind" type="number" />
+        </div>
+        <div>
+          <label>Max Wind (kts)</label>
+          <input id="maxWind" type="number" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Optimal Wind Min (kts)</label>
+          <input id="optMin" type="number" />
+        </div>
+        <div>
+          <label>Optimal Wind Max (kts)</label>
+          <input id="optMax" type="number" />
+        </div>
+      </div>
+      <label>Max Wave Height (m)</label>
+      <input id="maxWave" type="number" step="0.1" />
+    </div>
+
+    <div class="card">
+      <h3>Rider Profile (Wingfoil)</h3>
+      <div class="row">
+        <div>
+          <label>Weight (kg)</label>
+          <input id="weight" type="number" />
+        </div>
+        <div>
+          <label>Skill Level</label>
+          <input id="skill" type="text" placeholder="beginner/intermediate/advanced" />
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="saveConfig()">Save Settings</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h3>Admin</h3>
+      <label>Admin Token (optional)</label>
+      <input id="adminToken" type="text" placeholder="Paste X-Admin-Token for protected actions" />
+    </div>
+
+    <div class="card">
+      <h3>Spot Map</h3>
+      <form class="upload" onsubmit="uploadMap(event)">
+        <label>Upload satellite image (JPG/PNG). Saved as /static/spot-map.jpg</label>
+        <input id="mapfile" type="file" accept="image/*" />
+        <div class="actions" style="margin-top:10px"><button type="submit">Upload Map</button></div>
+      </form>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label>Shoreline height (% of card)</label>
+          <input id="shorelineLen" type="number" min="10" max="90" />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
